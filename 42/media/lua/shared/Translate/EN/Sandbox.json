@@ -1,0 +1,9 @@
+{
+    "Sandbox_TrippingZombiesMPFix": "Tripping Zombies MP Fix",
+    "Sandbox_TrippingZombiesMPFix_Enabled": "Same trips for every player",
+    "Sandbox_TrippingZombiesMPFix_Enabled_tooltip": "On: Tripping Zombies' trips and falls are rolled only by the game that runs the zombie, and every other player's copy of that zombie trips the same way a moment later. Hit knockdowns are rolled by that game too, so everyone sees them. Off: Tripping Zombies works as without this add-on (each game trips its own copies; other players see them teleport). Every player needs the add-on. Applies at once, also when an admin changes it in a running game.",
+    "Sandbox_TrippingZombiesMPFix_SyncGetUp": "Copies get up with the real zombie",
+    "Sandbox_TrippingZombiesMPFix_SyncGetUp_tooltip": "A copy that tripped gets up as soon as the zombie on the other player's screen gets up, instead of lying on for its own 1-3 s while the zombie runs away (that is what got it teleported).",
+    "Sandbox_TrippingZombiesMPFix_Log": "Debug log",
+    "Sandbox_TrippingZombiesMPFix_Log_tooltip": "Writes every forwarded trip and a stats line every minute to console.txt ([TZMPFix] lines). For bug reports; leave it off otherwise."
+}

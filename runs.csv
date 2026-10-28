@@ -1,0 +1,16 @@
+2026-10-28 19:07,smoke1,20261028_190653,fix=on,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 19:18,R1-lan-off,20261028_191754,fix=off,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 19:27,R2-lan-on,20261028_192653,fix=on,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 19:41,R2b-lan-on,20261028_194120,fix=on,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 19:53,R2c-lan-on,20261028_195233,fix=on,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 20:01,R2d-lan-on,20261028_200049,fix=on,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 20:12,R2e-lan-on,20261028_201149,fix=on,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 20:22,R2f-lan-on,20261028_202150,fix=on,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 20:32,R2g-lan-on-sprinters,20261028_203149,fix=on,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 20:42,R2h-lan-on-sprinters,20261028_204149,fix=on,wan=lan,zs=yes,hits=4.0,tz={}
+2026-10-28 20:51,R3-wan-off,20261028_205049,fix=off,wan=friend,zs=yes,hits=4.0,tz={}
+2026-10-28 20:58,R4-wan-on,20261028_205849,fix=on,wan=friend,zs=yes,hits=4.0,tz={}
+2026-10-28 21:08,R5-lan-off-nochase,20261028_210749,fix=off,wan=lan,zs=yes,hits=4.0,tz={"requireChasing": "false"}
+2026-10-28 21:16,R6-lan-on-nochase,20261028_211549,fix=on,wan=lan,zs=yes,hits=4.0,tz={"requireChasing": "false"}
+2026-10-28 21:22,R7-lan-on-nozs,20261028_212149,fix=on,wan=lan,zs=no,hits=4.0,tz={}
+2026-10-28 21:27,R8-final-lan-on,20261028_212749,fix=on,wan=lan,zs=yes,hits=4.0,tz={}

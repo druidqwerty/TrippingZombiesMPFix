@@ -1,0 +1,17 @@
+# Build output
+build/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+console.txt

@@ -1,0 +1,10 @@
+name=Tripping Zombies MP Fix [B42]
+id=TrippingZombiesMPFix
+author=druid
+description=Add-on for Tripping Zombies: in multiplayer every player sees the same trips and falls, without teleports. In B42 multiplayer Tripping Zombies rolls its trips separately on the server and on every player's game, so each player sees his own trips: your copy of a friend's zombie falls on its own while the real one keeps running, and the game teleports it every 3 tiles; the friend's trips, and the hit knockdowns, never reach you. With this add-on the trip is rolled once, by the game that runs the zombie, and the same fall is played on everyone's copy a moment later; copies get up with the real zombie. Pure Lua, Tripping Zombies itself is not changed. Every player needs it (it must be in the server mod list). Settings: the host's sandbox options, page Tripping Zombies MP Fix. Single player: nothing changes.
+require=\TrippingZombies
+category=mechanic
+versionMin=42.21
+modversion=1.0.0
+poster=poster.png
+icon=icon.png

@@ -1,0 +1,25 @@
+VERSION = 1,
+
+option TrippingZombiesMPFix.Enabled
+{
+    type = boolean,
+    default = true,
+    page = TrippingZombiesMPFix,
+    translation = TrippingZombiesMPFix_Enabled,
+}
+
+option TrippingZombiesMPFix.SyncGetUp
+{
+    type = boolean,
+    default = true,
+    page = TrippingZombiesMPFix,
+    translation = TrippingZombiesMPFix_SyncGetUp,
+}
+
+option TrippingZombiesMPFix.Log
+{
+    type = boolean,
+    default = false,
+    page = TrippingZombiesMPFix,
+    translation = TrippingZombiesMPFix_Log,
+}
