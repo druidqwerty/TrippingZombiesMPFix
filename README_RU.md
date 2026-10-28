@@ -6,6 +6,8 @@
 в мультиплеере все игроки видят одни и те же спотыкания и падения, в один и тот же момент, без телепортов.
 Сам Tripping Zombies не меняется, его код не копируется; это отдельный мод на Lua.
 
+**Мастерская Steam:** https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899 · **Исходный код (MIT):** https://github.com/druidqwerty/TrippingZombiesMPFix
+
 <p align="center"><a href="https://boosty.to/lrgpp"><img src="docs/banner.png" alt="Моды LrgPP на Boosty" width="640"></a></p>
 
 Мод бесплатный, исходники открыты. Код пишет нейросеть, а с меня — постановка задач, тесты и время. Если мод сделал игру лучше, [поддержите на Boosty](https://boosty.to/lrgpp).
@@ -77,7 +79,7 @@ English version: [README.md](README.md)
 
 - Build 42.21+ и [Tripping Zombies](https://steamcommunity.com/sharedfiles/filedetails/?id=3746603021).
 - **Нужен каждому игроку** и должен быть в списке модов сервера: `TrippingZombiesMPFix` в `Mods=` (после
-  `TrippingZombies`) и id из Мастерской в `WorkshopItems=`. Подключающиеся игроки получат его из Мастерской
+  `TrippingZombies`) и `3829034899` в `WorkshopItems=`. Подключающиеся игроки получат его из Мастерской
   сами.
 - Без Java и ZombieBuddy.
 

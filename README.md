@@ -6,6 +6,8 @@ An add-on for [Tripping Zombies](https://steamcommunity.com/sharedfiles/filedeta
 in multiplayer every player sees the same trips and falls, at the same moment, without teleports.
 Tripping Zombies itself is not changed and none of its code is copied; this is a separate Lua mod.
 
+**Steam Workshop:** https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899 · **Source code (MIT):** https://github.com/druidqwerty/TrippingZombiesMPFix
+
 <p align="center"><a href="https://boosty.to/lrgpp"><img src="docs/banner.png" alt="LrgPP mods on Boosty" width="640"></a></p>
 
 Free and open source. The code is written by an AI; the direction, the testing and the time are mine. If the mod made your game better: [support on Boosty](https://boosty.to/lrgpp).
@@ -76,7 +78,7 @@ With Tripping Zombies' default settings (trip only while chasing **off**), LAN:
 
 - Build 42.21+ and [Tripping Zombies](https://steamcommunity.com/sharedfiles/filedetails/?id=3746603021).
 - **Every player needs it**, and it must be in the server's mod list: add `TrippingZombiesMPFix` to `Mods=`
-  (after `TrippingZombies`) and the Workshop id to `WorkshopItems=`. Players who join get it from the
+  (after `TrippingZombies`) and `3829034899` to `WorkshopItems=`. Players who join get it from the
   Workshop automatically.
 - No Java, no ZombieBuddy.
 
