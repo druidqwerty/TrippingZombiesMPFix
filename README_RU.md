@@ -139,6 +139,13 @@ English version: [README.md](README.md)
   запускает тестовый стенд ZombieSync MP, он сюда не входит), скрипты разбора, вспомогательный мод, который
   сообщает об ударах так же, как клиент Tripping Zombies, и список всех живых прогонов.
 
+## Мои моды
+- [SmoothRide MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827367565) — плавные машины в мультиплеере.
+- [ZombieSync MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115) — плавные зомби в мультиплеере.
+- **Tripping Zombies MP Fix** — одинаковые падения Tripping Zombies у всех игроков (этот мод).
+- [Wandering Hordes Save Trim](https://steamcommunity.com/sharedfiles/filedetails/?id=3829140377) — без подвисаний сервера при сохранении из-за карты стен Wandering Hordes.
+- [Host Unstuck](https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351) — лечит и ускоряет загрузку мастерской при запуске своего сервера.
+
 ## Авторы и лицензия
 
 Tripping Zombies — автор turnip (идея — Monkey); дополнение работает только вместе с ним.

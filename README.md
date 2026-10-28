@@ -137,6 +137,13 @@ simply works as before.
   clients started by the ZombieSync MP test harness, which is not included), their analysis scripts, the helper
   mod that reports hits the way Tripping Zombies' client does, and the list of every live run.
 
+## My mods
+- [SmoothRide MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827367565) — smooth multiplayer vehicles.
+- [ZombieSync MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115) — smooth multiplayer zombies.
+- **Tripping Zombies MP Fix** — the same Tripping Zombies trips for every player (this mod).
+- [Wandering Hordes Save Trim](https://steamcommunity.com/sharedfiles/filedetails/?id=3829140377) — no more save freezes from Wandering Hordes' wall map.
+- [Host Unstuck](https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351) — un-sticks and speeds up the Workshop download when hosting from the menu.
+
 ## Credits and license
 
 Tripping Zombies is by turnip (original concept by Monkey); this add-on only works alongside it.
