@@ -143,7 +143,7 @@ English version: [README.md](README.md)
 - [SmoothRide MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827367565) — плавные машины в мультиплеере.
 - [ZombieSync MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115) — плавные зомби в мультиплеере.
 - **Tripping Zombies MP Fix** — одинаковые падения Tripping Zombies у всех игроков (этот мод).
-- [Wandering Hordes Save Trim](https://steamcommunity.com/sharedfiles/filedetails/?id=3829140377) — без подвисаний сервера при сохранении из-за карты стен Wandering Hordes.
+- [Wandering Hordes Performance Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=3829140377) — без подвисаний сохранения и лагов клиента из-за Wandering Hordes.
 - [Download Unstuck](https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351) — лечит и ускоряет загрузку мастерской при запуске своего сервера.
 
 ## Авторы и лицензия
