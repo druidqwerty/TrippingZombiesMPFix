@@ -8,7 +8,7 @@
 
 **Мастерская Steam:** https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899 · **Исходный код (MIT):** https://github.com/druidqwerty/TrippingZombiesMPFix
 
-<p align="center"><a href="https://boosty.to/lrgpp"><img src="docs/banner.png" alt="Моды LrgPP на Boosty" width="640"></a></p>
+<p align="center"><a href="https://boosty.to/lrgpp"><img src="https://raw.githubusercontent.com/druidqwerty/TrippingZombiesMPFix/acac15e0f43f30c07e083a5a86e658572e609a9e/docs/banner.png" alt="Моды LrgPP на Boosty" width="640"></a></p>
 
 Мод бесплатный, исходники открыты. Код пишет нейросеть, а с меня — постановка задач, тесты и время. Если мод сделал игру лучше, [поддержите на Boosty](https://boosty.to/lrgpp).
 

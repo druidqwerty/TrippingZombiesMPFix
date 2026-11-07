@@ -8,7 +8,7 @@ Tripping Zombies itself is not changed and none of its code is copied; this is a
 
 **Steam Workshop:** https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899 · **Source code (MIT):** https://github.com/druidqwerty/TrippingZombiesMPFix
 
-<p align="center"><a href="https://boosty.to/lrgpp"><img src="docs/banner.png" alt="LrgPP mods on Boosty" width="640"></a></p>
+<p align="center"><a href="https://boosty.to/lrgpp"><img src="https://raw.githubusercontent.com/druidqwerty/TrippingZombiesMPFix/acac15e0f43f30c07e083a5a86e658572e609a9e/docs/banner.png" alt="LrgPP mods on Boosty" width="640"></a></p>
 
 Free and open source. The code is written by an AI; the direction, the testing and the time are mine. If the mod made your game better: [support on Boosty](https://boosty.to/lrgpp).
 
