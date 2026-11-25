@@ -32,7 +32,8 @@ local function list(items)
 end
 T.list = list
 
-function getActivatedMods() return list({ "\\TrippingZombies", "\\TrippingZombiesMPFix" }) end
+T.mods = { "\\TrippingZombies", "\\TrippingZombiesMPFix" }
+function getActivatedMods() return list(T.mods) end
 
 -- the game's own (Java) zombie methods: log the call, keep a little state
 local function rec(self, name, a) self.calls[#self.calls + 1] = name .. "(" .. tostring(a) .. ")" end
@@ -47,7 +48,7 @@ ZIDX.setUsePhysicHitReaction = function(self, a) rec(self, "setUsePhysicHitReact
 ZIDX.setStateMachineLocked = function(self, a) rec(self, "setStateMachineLocked", a) end
 ZIDX.setCrawler = function(self, a) rec(self, "setCrawler", a) end
 ZIDX.setHitDir = function(self, v) rec(self, "setHitDir", v and (v.x .. ";" .. v.y)) end
-ZIDX.setVariable = function(self, k, v) rec(self, "setVariable", tostring(k) .. "=" .. tostring(v)) end
+ZIDX.setVariable = function(self, k, v) rec(self, "setVariable", tostring(k) .. "=" .. tostring(v)); self.vars = self.vars or {}; self.vars[k] = v end
 ZIDX.getHitDir = function(self)
     self.hd = self.hd or { x = 0, y = 0, set = function(v, x, y) v.x, v.y = x, y end,
                            getX = function(v) return v.x end, getY = function(v) return v.y end }
@@ -64,6 +65,7 @@ ZIDX.isGettingUp = function(self) return self.gettingUp == true end
 ZIDX.getActionStateName = function(self) return self.state end
 ZIDX.isDead = function(self) return self.dead == true end
 ZIDX.isAttacking = function(self) return self.attacking == true end
+ZIDX.isRagdollSimulationActive = function(self) return self.ragdolling == true end
 ZIDX.hasModData = function(self) return self.md ~= nil end
 ZIDX.getModData = function(self) self.md = self.md or {}; return self.md end
 ZIDX.getReanimateTimer = function(self) return self.timer end
@@ -118,6 +120,7 @@ PIDX.isRunning = function(self) return self.running == true end
 PIDX.isSneaking = function(self) return self.sneaking == true end
 PIDX.isBehind = function(self, z) return self.behind == true end
 PIDX.getPerkLevel = function(self, perk) return self.perks[perk.name] or 0 end
+PIDX.getPrimaryHandItem = function(self) return self.primaryHandItem end
 
 function T.player(id, opts)
     local p = { kind = "IsoPlayer", id = id, x = 10, y = 20, perks = { Strength = 5 } }
@@ -166,7 +169,7 @@ end
 -- Events: Add/Remove keep a handler list; T.fire runs the handlers like the game (errors are caught)
 Events = {}
 for _, name in ipairs({ "OnZombieUpdate", "OnCharacterCollide", "OnClientCommand", "OnServerCommand", "OnTick",
-                        "OnGameStart", "OnServerStarted" }) do
+                        "OnGameStart", "OnServerStarted", "OnZombieDead" }) do
     local ev = { handlers = {} }
     ev.Add = function(fn) ev.handlers[#ev.handlers + 1] = fn end
     ev.Remove = function(fn)

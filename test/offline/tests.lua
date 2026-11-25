@@ -60,11 +60,12 @@ check(#FAKE.updates == 3 and #T.logs == nLogs and #T.sentClient == 0, "disabled,
 SandboxVars.TrippingZombiesMPFix.Log = true
 SandboxVars.TrippingZombiesMPFix.Enabled = true
 
--- an error inside TZ: the error still surfaces, and recording is off afterwards
+-- an error inside TZ: the error still surfaces, partial ops are discarded, and recording is off afterwards
 FAKE.errorOn = 101
 T.reset()
 T.fire("OnZombieUpdate", z1)
 check(#T.errors == 1 and string.find(T.errors[1], "boom", 1, true) ~= nil, "TZ's error is passed on")
+check(#T.sentClient == 0, "errored TZ handler does not flush partial ops")
 FAKE.errorOn = nil
 T.reset()
 z1:knockDown(true)   -- another mod's call, outside TZ
@@ -233,10 +234,12 @@ check(#T.sentServer == 1 and T.sentServer[1].p == friend and T.sentServer[1].com
 -- a possible stealth execution stays on the server
 FAKE.SB.enableExecutions = true
 me.sneaking, me.behind = true, true
+me.primaryHandItem = { isBareHands = function() return false end, getCondition = function() return 10 end }
 T.reset()
 T.fire("OnClientCommand", "TrippingZombies", "hit", me, { id = 201, x = 11, y = 20, z = 0, kind = "melee", str = 7, wMod = 1 })
 check(#FAKE.cmds == nCmds + 1 and #T.sentServer == 2 and T.sentServer[1].command == "ops", "sneak hit from behind rolled on the server, its calls sent to everyone near")
 me.sneaking, me.behind = false, false
+me.primaryHandItem = nil
 -- a server-simulated zombie: rolled on the server, the fall is sent to the players near it
 local s2 = T.zombie(202, { remote = true, x = 12.5 })
 T.reset()
@@ -296,6 +299,118 @@ check(#FAKE.updates == 1 and hasCall(z2, "knockDown(true)") and #T.sentClient ==
 ---------------------------------------------------------------- removing a TZ handler removes the wrapper
 Events.OnZombieUpdate.Remove(FAKE.OnZombieUpdate)
 check(#Events.OnZombieUpdate.handlers == 0, "Remove(TZ handler) removed the wrapper")
+
+---------------------------------------------------------------- v2.6.1 & bugfix regressions
+-- Re-attach OnZombieUpdate for staged ragdoll & getUpSync regressions
+Events.OnZombieUpdate.Add(FAKE.OnZombieUpdate)
+T.setSide("client")
+SandboxVars.TrippingZombiesMPFix.SyncGetUp = true
+T.localPlayer = T.player(1, { isLocal = true, x = 10, y = 20 })
+local friend2 = T.player(2, { x = 12, y = 22 })
+
+-- 1. Staged ragdoll trip (v2.6.1): stagger tick followed by knockDown tick, applied cleanly on copy
+local zStg = T.zombie(401, { remote = false, x = 20.5 })
+local zStgCopy = T.zombie(402, { remote = true, x = 21.5 })
+FAKE.tripOn[401] = "staged"
+T.reset()
+T.fire("OnZombieUpdate", zStg)
+check(#T.sentClient == 1 and opsOf(T.sentClient[1]) == "ph,hb,ap,hf,sb",
+    "staged ragdoll stage 1 ops: " .. (T.sentClient[1] and opsOf(T.sentClient[1]) or "-"))
+local op1 = T.sentClient[1].args.z[1].o
+T.reset()
+T.fire("OnZombieUpdate", zStg)
+check(#T.sentClient == 1 and opsOf(T.sentClient[1]) == "ph,hb,ff,kd,ap,hd",
+    "staged ragdoll stage 2 ops: " .. (T.sentClient[1] and opsOf(T.sentClient[1]) or "-"))
+local op2 = T.sentClient[1].args.z[1].o
+FAKE.tripOn[401] = nil
+T.reset()
+T.fire("OnServerCommand", "TZMPFix", "ops", { s = 2, z = { { i = 402, x = 21, y = 20, z = 0, o = op1 } } })
+zStgCopy.state = "staggerback"
+T.fire("OnServerCommand", "TZMPFix", "ops", { s = 2, z = { { i = 402, x = 21, y = 20, z = 0, o = op2 } } })
+check(hasCall(zStgCopy, "setStaggerBack(true)") and hasCall(zStgCopy, "knockDown(true)"),
+    "staged ragdoll copy receives both stagger and knockDown")
+
+-- 2. Already ragdolling copy (isRagdollSimulationActive / staggerback-ragdoll) is skipped
+local zRag = T.zombie(403, { remote = true, ragdolling = true, state = "staggerback-ragdoll", x = 22.5 })
+T.reset()
+T.fire("OnServerCommand", "TZMPFix", "ops", { s = 2, z = { { i = 403, x = 22, y = 20, z = 0, o = { { "kd", true } } } } })
+check(#zRag.calls == 0, "ragdolling copy is not knocked down again")
+
+-- 3. getUpSync handles onground-ragdoll and drops once upright
+local zRagUp = T.zombie(404, { remote = true, x = 23.5 })
+T.reset()
+T.fire("OnServerCommand", "TZMPFix", "ops", { s = 2, z = { { i = 404, x = 23, y = 20, z = 0, o = { { "kd", true } } } } })
+zRagUp.state = "onground-ragdoll"
+zRagUp.onFloor = true
+zRagUp.timer = 60
+T.fire("OnTick")
+check(zRagUp.timer == 2, "onground-ragdoll reanimateTimer cut to 2, got " .. tostring(zRagUp.timer))
+zRagUp.state = "walktoward-network"
+zRagUp.onFloor = false
+zRagUp.knocked = false
+T.fire("OnTick")
+zRagUp.state = "onground"
+zRagUp.onFloor = true
+zRagUp.timer = 60
+T.fire("OnTick")
+check(zRagUp.timer == 60, "getUpSync drops copy after it stands up")
+
+-- 4. findZombie ignores negative online id
+local zNeg = T.zombie(-1, { remote = true, x = 24.5 })
+T.reset()
+T.fire("OnServerCommand", "TZMPFix", "ops", { s = 2, z = { { i = -1, x = 24, y = 20, z = 0, o = { { "kd", true } } } } })
+check(#zNeg.calls == 0, "negative online id is ignored")
+
+-- 5. chargeToOwner sends sprint/run state; runAct restores it even if player stopped sprinting in transit
+local pCharger = T.localPlayer
+pCharger.sprinting = true
+pCharger.running = false
+pCharger.perks.Strength = 8
+local zChg = T.zombie(405, { remote = true, x = 25.5 })
+T.reset()
+T.fire("OnCharacterCollide", pCharger, zChg)
+check(#T.sentClient == 1 and T.sentClient[1].args.sp == true and T.sentClient[1].args.rn == false,
+    "chargeToOwner captures sprint/run flags")
+pCharger.sprinting = false
+pCharger.running = false
+local zChgOwn = T.zombie(406, { remote = false, x = 26.5 })
+FAKE.tripCharge = true
+FAKE.chargeMode = nil
+T.reset()
+T.fire("OnServerCommand", "TZMPFix", "act", { k = "bump", i = 406, x = 26, y = 20, z = 0, a = 1, str = 8, sp = true, rn = false })
+check(FAKE.chargeMode == "sprint" and pCharger:isSprinting() == false and hasCall(zChgOwn, "setBumpType(trippingFromSprint)"),
+    "handed-over charge sees sprint state during roll and restores it afterwards")
+FAKE.tripCharge = false
+
+-- 6. hitToOwner: shove while sneaking behind is STILL handed over; dead zombie & compatibilityOnly skipped
+T.setSide("server")
+T.localPlayer = nil
+local sLive = T.zombie(501, { remote = false, ownerPlayer = friend2, x = 12.5 })
+local sDead = T.zombie(502, { remote = false, ownerPlayer = friend2, dead = true, x = 12.5 })
+FAKE.SB.enableExecutions = true
+pCharger.sneaking, pCharger.behind = true, true
+pCharger.primaryHandItem = { isBareHands = function() return false end, getCondition = function() return 10 end }
+T.reset()
+T.fire("OnClientCommand", "TrippingZombies", "hit", pCharger, { id = 501, x = 12, y = 20, z = 0, kind = "shove", str = 8, wMod = 1 })
+check(#T.sentServer == 1 and T.sentServer[1].command == "act" and T.sentServer[1].args.kind == "shove",
+    "sneaking shove from behind is handed to owner instead of staying on server")
+T.reset()
+T.fire("OnClientCommand", "TrippingZombies", "hit", pCharger, { id = 502, x = 12, y = 20, z = 0, kind = "melee", str = 8, wMod = 1 })
+check(#T.sentServer == 0, "dead zombie hit is not handed over")
+FAKE.SB.compatibilityOnly = true
+T.reset()
+T.fire("OnClientCommand", "TrippingZombies", "hit", pCharger, { id = 501, x = 12, y = 20, z = 0, kind = "melee", str = 8, wMod = 1 })
+check(#T.sentServer == 0, "compatibilityOnly=true skips hit hand-over")
+FAKE.SB.compatibilityOnly = false
+pCharger.sneaking, pCharger.behind = false, false
+
+-- 7. OnZombieDead passes through cleanly in SP and MP
+T.reset()
+T.fire("OnZombieDead", sLive)
+check(FAKE.deaths == 0 and #T.sentServer == 0, "OnZombieDead in MP stays no-op")
+T.setSide("sp")
+T.fire("OnZombieDead", sLive)
+check(FAKE.deaths == 1, "OnZombieDead in SP runs TZ handler")
 
 T.realPrint("offline tests: " .. T.passes .. " passed, " .. T.fails .. " failed")
 if T.fails > 0 then error("offline tests failed") end

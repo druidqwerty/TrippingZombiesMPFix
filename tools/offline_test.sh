@@ -19,3 +19,4 @@ mkdir -p "$HERE/build/luacheck"
 # stdlib.lua is read from the working directory
 cd "$GAME"
 "$JDK/java" -cp "$CP" LuaRun "$HERE/test/offline/mocks.lua" "$MODLUA" "$HERE/test/offline/fake_tz.lua" "$HERE/test/offline/tests.lua"
+"$JDK/java" -cp "$CP" LuaRun "$HERE/test/offline/mocks.lua" "$HERE/test/offline/enable_prd.lua" "$MODLUA" "$HERE/test/offline/fake_tz.lua" "$HERE/test/offline/tests_prd.lua"

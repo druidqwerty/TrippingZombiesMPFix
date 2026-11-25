@@ -32,7 +32,7 @@ if TZMPFix and TZMPFix.loaded then return end
 TZMPFix = TZMPFix or {}
 local M = TZMPFix
 M.loaded = true
-M.VERSION = "1.0.0"
+M.VERSION = "1.0.1"
 M.hooked = {}
 
 local MODULE = "TZMPFix"
@@ -115,9 +115,10 @@ end
 local function modActive(id)
     local mods = getActivatedMods and getActivatedMods()
     if not mods then return false end
+    local tail = #id + 1
     for i = 0, mods:size() - 1 do
         local m = tostring(mods:get(i))
-        if m == id or m == "\\" .. id then return true end
+        if m == id or string.sub(m, -tail) == "\\" .. id or string.sub(m, -tail) == "/" .. id then return true end
     end
     return false
 end
@@ -262,7 +263,7 @@ local function flush()
         local z = e.z
         batchOf[z] = nil
         local id = z:getOnlineID()
-        if n < MAX_ENTRIES and id ~= nil and id >= 0 and #e.o > 0 and not isNpcBody(z) then
+        if n < MAX_ENTRIES and id ~= nil and id >= 0 and #e.o > 0 and not z:isDead() and not isNpcBody(z) then
             n = n + 1
             local entry = { i = id, x = math.floor(z:getX()), y = math.floor(z:getY()), z = math.floor(z:getZ()), o = e.o }
             -- a sprint tumble also carries where it starts and which way it goes (see keepCopyBump)
@@ -305,6 +306,10 @@ local function runTZ(fn, a, b, c, d)
     depth = depth + 1
     local ok, err = pcall(fn, a, b, c, d)
     depth = depth - 1
+    if not ok then
+        if depth == 0 and batchN > 0 then batch, batchN, batchOf = {}, 0, {} end
+        error(err)
+    end
     if depth == 0 and batchN > 0 then
         local ok2, err2 = pcall(flush)
         if not ok2 then
@@ -312,7 +317,6 @@ local function runTZ(fn, a, b, c, d)
             batch, batchN, batchOf = {}, 0, {}
         end
     end
-    if not ok then error(err) end
 end
 
 local function runLogOnly(fn, a, b, c, d)
@@ -328,7 +332,7 @@ end
 local function findZombie(id, x, y, z)
     id = tonumber(id)
     local cell = getCell()
-    if id == nil or cell == nil then return nil end
+    if id == nil or id < 0 or cell == nil then return nil end
     x, y, z = tonumber(x), tonumber(y), tonumber(z)
     if x and y and z then
         x, y, z = math.floor(x), math.floor(y), math.floor(z)
@@ -362,11 +366,13 @@ local getUpSeen = {}  -- copies whose lying time we already cut (counted once pe
 
 local function isDown(z)
     if z:isOnFloor() or z:isKnockedDown() or z:isGettingUp() then return true end
+    if z.isRagdollSimulationActive and z:isRagdollSimulationActive() then return true end
     local st = z:getActionStateName()
     if st == nil then return false end
     st = string.lower(st)
     return string.find(st, "falldown", 1, true) ~= nil or string.find(st, "onground", 1, true) ~= nil
         or string.find(st, "getup", 1, true) ~= nil or string.find(st, "knockeddown", 1, true) ~= nil
+        or string.find(st, "ragdoll", 1, true) ~= nil
 end
 
 -- Bumps on a copy: when a zombie another game simulates enters the bumped state, BumpedState.setParams
@@ -397,14 +403,20 @@ local function watchCopyBump(z, bumpType, t, e)
 end
 
 local function dropCopyBump(z)
-    pendingBump[z] = nil
-    pendingBumpN = pendingBumpN - 1
+    if pendingBump[z] ~= nil then
+        pendingBump[z] = nil
+        pendingBumpN = pendingBumpN - 1
+    end
 end
 
 -- from the OnZombieUpdate wrapper, for copies, while some bumps are pending
 local function keepCopyBump(z)
     local p = pendingBump[z]
     if p == nil then return end
+    if z:isDead() then
+        dropCopyBump(z)
+        return
+    end
     if z:getActionStateName() ~= "bumped" then
         if p[3] or wall() > p[2] then dropCopyBump(z) end   -- the bump is over, or it never started
         return
@@ -458,7 +470,7 @@ local function applyOp(z, code, arg)
         return
     end
     if code == "sv" then
-        if type(arg) == "table" and type(arg[1]) == "string" and ORIG.setVariable ~= nil then
+        if type(arg) == "table" and type(arg[1]) == "string" and arg[2] ~= nil and ORIG.setVariable ~= nil then
             ORIG.setVariable(z, arg[1], arg[2])
         end
         return
@@ -512,6 +524,7 @@ local function applyEntry(e, t, verbose)
         end
     end
     if fall and remote then
+        dropCopyBump(z)
         if getUpSync[z] == nil then getUpN = getUpN + 1 end
         getUpSync[z] = t + GETUP_WINDOW_MS
         getUpSeen[z] = nil
@@ -542,17 +555,29 @@ local function keepGetUpsInStep()
         return
     end
     local t = wall()
+    local drop, dropN = nil, 0
     for z, deadline in pairs(getUpSync) do
-        if t > deadline or z:isDead() or not z:isRemoteZombie() then
+        if t > deadline or z:isDead() or not z:isRemoteZombie() or (getUpSeen[z] and not isDown(z)) then
+            dropN = dropN + 1
+            if drop == nil then drop = {} end
+            drop[dropN] = z
+        else
+            local st = z:getActionStateName()
+            if (st == "onground" or st == "onground-ragdoll") and z:getReanimateTimer() > 2 then
+                z:setReanimateTimer(2)
+                if getUpSeen[z] == nil then
+                    getUpSeen[z] = true
+                    stats.getUp = stats.getUp + 1
+                end
+            end
+        end
+    end
+    for i = 1, dropN do
+        local z = drop[i]
+        if getUpSync[z] ~= nil then
             getUpSync[z] = nil
             getUpSeen[z] = nil
             getUpN = getUpN - 1
-        elseif z:getActionStateName() == "onground" and z:getReanimateTimer() > 2 then
-            z:setReanimateTimer(2)
-            if getUpSeen[z] == nil then
-                getUpSeen[z] = true
-                stats.getUp = stats.getUp + 1
-            end
         end
     end
 end
@@ -562,30 +587,49 @@ end
 --=============================================================================
 local captured = {}    -- event name -> Tripping Zombies' own handler
 
--- Run a handed-over roll as the attacker's game would have: with the strength it reported (a remote
--- player's skills are not known here) and without stealth executions (those stay on the server).
-local function withAttacker(attacker, str, f)
+-- Run a handed-over roll as the attacker's game would have: with the strength (and charge state) it
+-- reported (a remote player's skills are not known here, and sprint state can end in transit) and without
+-- stealth executions (those stay on the server).
+local function withAttacker(attacker, str, f, sprint, run)
     local sb = tzSandbox()
     local savedExec
     if sb ~= nil then
         savedExec = sb.enableExecutions
         sb.enableExecutions = false
     end
-    local idx, orig
-    if type(str) == "number" and str >= 0 and str <= 10 and Perks and Perks.Strength then
-        local mt = __classmetatables and IsoPlayer and IsoPlayer.class and __classmetatables[IsoPlayer.class]
-        idx = mt and mt.__index
-        orig = type(idx) == "table" and idx.getPerkLevel or nil
-        if orig ~= nil then
-            local strength = Perks.Strength
-            idx.getPerkLevel = function(self, perk)
-                if perk == strength and self == attacker then return str end
-                return orig(self, perk)
+    local mt = __classmetatables and IsoPlayer and IsoPlayer.class and __classmetatables[IsoPlayer.class]
+    local idx = mt and mt.__index
+    local origPerk, origSprint, origRun
+    if type(idx) == "table" then
+        if type(str) == "number" and str >= 0 and str <= 10 and Perks and Perks.Strength then
+            origPerk = idx.getPerkLevel
+            if origPerk ~= nil then
+                local strength = Perks.Strength
+                idx.getPerkLevel = function(self, perk)
+                    if perk == strength and self == attacker then return str end
+                    return origPerk(self, perk)
+                end
+            end
+        end
+        if type(sprint) == "boolean" and idx.isSprinting ~= nil then
+            origSprint = idx.isSprinting
+            idx.isSprinting = function(self)
+                if self == attacker then return sprint end
+                return origSprint(self)
+            end
+        end
+        if type(run) == "boolean" and idx.isRunning ~= nil then
+            origRun = idx.isRunning
+            idx.isRunning = function(self)
+                if self == attacker then return run end
+                return origRun(self)
             end
         end
     end
     local ok, err = pcall(f)
-    if orig ~= nil then idx.getPerkLevel = orig end
+    if origPerk ~= nil then idx.getPerkLevel = origPerk end
+    if origSprint ~= nil then idx.isSprinting = origSprint end
+    if origRun ~= nil then idx.isRunning = origRun end
     if sb ~= nil then sb.enableExecutions = savedExec end
     if not ok then log("handed-over roll failed: " .. tostring(err)) end
 end
@@ -614,12 +658,19 @@ local function hitToOwner(player, args)
     if player == nil or type(args) ~= "table" then return false end
     local id, x, y, zz = tonumber(args.id), tonumber(args.x), tonumber(args.y), tonumber(args.z)
     if not (id and x and y and zz) then return false end
+    local sb = tzSandbox()
+    if sb ~= nil and (sb.enabled == false or sb.compatibilityOnly == true) then return false end
     local z = findZombie(id, x, y, zz)
-    if z == nil or isNpcBody(z) then return false end
+    if z == nil or z:isDead() or isNpcBody(z) then return false end
     if z:isRemoteZombie() then return false end   -- nobody owns it: the server simulates it and rolls it
     -- a sneak attack from behind may be a stealth execution (opt-in): that stays with the server, as before
-    local sb = tzSandbox()
-    if sb ~= nil and sb.enableExecutions == true and player:isSneaking() and player:isBehind(z) then return false end
+    if sb ~= nil and sb.enableExecutions == true and args.kind ~= "shove" and player:isSneaking() and player:isBehind(z) then
+        local wpn = player.getPrimaryHandItem and player:getPrimaryHandItem()
+        if wpn ~= nil and not (wpn.isBareHands and wpn:isBareHands())
+                and (not wpn.getCondition or wpn:getCondition() > 0) then
+            return false
+        end
+    end
     local msg = {
         k = "hit", i = id, x = math.floor(z:getX()), y = math.floor(z:getY()), z = math.floor(z:getZ()),
         a = player:getOnlineID(), kind = args.kind, str = tonumber(args.str), wMod = tonumber(args.wMod),
@@ -633,16 +684,18 @@ end
 -- client: a shoulder charge into a zombie another game simulates; that game rolls it
 local lastCharge = {}
 local function chargeToOwner(p, z)
-    if not (p:isSprinting() or p:isRunning()) then return end
+    local sprint = p:isSprinting()
+    local run = p:isRunning()
+    if not (sprint or run) then return end
     local id = z:getOnlineID()
-    if id == nil or id < 0 or isNpcBody(z) then return end
+    if id == nil or id < 0 or z:isDead() or isNpcBody(z) then return end
     local t = wall()
     local last = lastCharge[z]
     if last ~= nil and t - last < CHARGE_REPEAT_MS then return end
     lastCharge[z] = t
     sendClientCommand(p, MODULE, "act", {
         k = "bump", i = id, x = math.floor(z:getX()), y = math.floor(z:getY()), z = math.floor(z:getZ()),
-        str = strengthOf(p),
+        str = strengthOf(p), sp = sprint, rn = run,
     })
     stats.actTx = stats.actTx + 1
     if logOn() then log("act bump z=" .. id .. " sent wall=" .. ms(t)) end
@@ -656,7 +709,7 @@ local function runAct(args, attacker)
         stats.actMiss = stats.actMiss + 1
         return
     end
-    if not simulatedHere(z, side()) or isNpcBody(z) then
+    if z:isDead() or not simulatedHere(z, side()) or isNpcBody(z) then
         stats.actNotMine = stats.actNotMine + 1
         return
     end
@@ -672,7 +725,7 @@ local function runAct(args, attacker)
     elseif args.k == "bump" then
         local fn = captured.OnCharacterCollide
         if fn == nil then return end
-        withAttacker(attacker, str, function() runTZ(fn, attacker, z) end)
+        withAttacker(attacker, str, function() runTZ(fn, attacker, z) end, args.sp, args.rn)
     else
         return
     end
@@ -789,16 +842,20 @@ local function onClientCommand(module, command, player, args)   -- server
         stats.relayed = stats.relayed + 1
     elseif command == "act" and args.k == "bump" then
         -- a shoulder charge into a zombie the charging player does not simulate
+        if player == nil then return end
         local z = findZombie(args.i, args.x, args.y, args.z)
-        if z == nil or isNpcBody(z) then return end
+        if z == nil or z:isDead() or isNpcBody(z) then return end
         if z:isRemoteZombie() then
             -- nobody owns it: the server simulates it, so it rolls here
             local fn = captured.OnCharacterCollide
-            if fn ~= nil then withAttacker(player, tonumber(args.str), function() runTZ(fn, player, z) end) end
+            if fn ~= nil then
+                withAttacker(player, tonumber(args.str), function() runTZ(fn, player, z) end, args.sp, args.rn)
+            end
             return
         end
         local msg = { k = "bump", i = z:getOnlineID(), x = math.floor(z:getX()), y = math.floor(z:getY()),
-                      z = math.floor(z:getZ()), a = player:getOnlineID(), str = tonumber(args.str) }
+                      z = math.floor(z:getZ()), a = player:getOnlineID(), str = tonumber(args.str),
+                      sp = args.sp, rn = args.rn }
         if sendToOwner(z, msg) then stats.actFwd = stats.actFwd + 1 end
     end
 end
@@ -838,14 +895,24 @@ local function onTick()
         if logOn() then log(statsLine()) end
         lastCharge = {}
         -- a copy that left the world before its bump started never updates again
-        for z, p in pairs(pendingBump) do
-            if t > p[2] + 5000 then dropCopyBump(z) end
+        if pendingBumpN > 0 then
+            local drop, dropN = nil, 0
+            for z, p in pairs(pendingBump) do
+                if t > p[2] + 5000 then
+                    dropN = dropN + 1
+                    if drop == nil then drop = {} end
+                    drop[dropN] = z
+                end
+            end
+            for i = 1, dropN do dropCopyBump(drop[i]) end
         end
     end
 end
 
 local function onStart()
     SIDE = nil
+    lastCharge = {}
+    nextStats = nil
     local s = side()
     local h = M.hooked
     local status = "OnZombieUpdate " .. (h.OnZombieUpdate and "yes" or "no")
